@@ -5,7 +5,7 @@ Payme yoki Click orqali to'laydi va QR-chipta oladi. Bitta chipta bilan tanlanga
 attraksionlardan o'tadi.
 
 ## Imkoniyatlar
-- Ma'lumot: attraksionlar, narxlar, Combo paket, xavfsizlik qoidalari, xarita, savol-javob
+- Ma'lumot: attraksionlar, narxlar, afishalar, xavfsizlik qoidalari, xarita, savol-javob
 - Onlayn bron: sana → soat → chiptalar → ism/telefon → to'lov
 - Har bir soatga sig'im cheklovi (navbat bo'lmasligi uchun), to'lanmagan bron 20 daqiqada bo'shaydi
 - To'lov: Payme Merchant API va Click SHOP API (kalitlar kiritilmaguncha demo rejim)
