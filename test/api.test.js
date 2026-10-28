@@ -34,7 +34,7 @@ const book = (extra = {}) =>
     slot: '10:00',
     name: 'Aziz',
     phone: '+998 90 123 45 67',
-    items: { combo: 2, zipline: 1 },
+    items: { superman: 2, bridge: 1 },
     payMethod: 'demo',
     ...extra,
   });
@@ -45,10 +45,10 @@ test('narx serverda hisoblanadi va demo to\'lov chiptani ochadi', async () => {
   const r = await book();
   assert.equal(r.status, 201);
   const b = await r.json();
-  assert.equal(b.total, 2 * 280000 + 150000);
+  assert.equal(b.total, 2 * 250000 + 40000);
   let t = await (await fetch(`${base}/api/tickets/${b.code}`)).json();
   assert.equal(t.status, 'pending');
-  assert.deepEqual(t.allowance, { zipline: 3, bridge: 2, swing: 2 });
+  assert.deepEqual(t.allowance, { zipline: 0, superman: 2, swing: 0, bridge: 1 });
   assert.equal(t.phone, '+99890*****67');
   const pay = await post(`/api/demo-pay/${b.code}`, {});
   assert.equal(pay.status, 200);
@@ -65,6 +65,7 @@ test("noto'g'ri ma'lumotlar rad etiladi", async () => {
   assert.ok(errors.length >= 3);
   assert.equal((await book({ date: '2026-06-06' })).status, 400); // o'tgan kun
   assert.equal((await book({ items: { zipline: -1 } })).status, 400);
+  assert.equal((await book({ items: { combo: 1 } })).status, 400); // paket o'chirilgan
   assert.equal((await book({ payMethod: 'cash' })).status, 400);
 });
 
@@ -130,7 +131,7 @@ test('Click oqimi: prepare va complete imzo bilan', async () => {
     service_id: '11',
     click_paydoc_id: '1',
     merchant_trans_id: orderId,
-    amount: '100000.00',
+    amount: '80000.00',
     action: '0',
     error: '0',
     error_note: '',
@@ -156,7 +157,7 @@ test('Click oqimi: prepare va complete imzo bilan', async () => {
 });
 
 test("admin: parol, ro'yxat va attraksionda belgilash", async () => {
-  const b = await (await book({ slot: '17:00', items: { combo: 1 } })).json();
+  const b = await (await book({ slot: '17:00', items: { zipline: 1, swing: 1 } })).json();
   await post(`/api/demo-pay/${b.code}`, {});
   const h = { 'x-admin-token': 'secret' };
   assert.equal((await fetch(`${base}/api/admin/bookings?date=2026-06-07`)).status, 401);

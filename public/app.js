@@ -1,23 +1,26 @@
 (() => {
   const $ = (s) => document.querySelector(s);
   const fmt = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + " so'm";
-  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   const DAYS = ['Yak', 'Dush', 'Sesh', 'Chor', 'Pay', 'Jum', 'Shan'];
   const MONTHS = ['yan', 'fev', 'mar', 'apr', 'may', 'iyun', 'iyul', 'avg', 'sen', 'okt', 'noy', 'dek'];
   const PAY_LABELS = {
     payme: '<span class="logo-payme">payme</span>',
     click: '<span class="logo-click">click</span>',
-    demo: 'Demo to\'lov',
+    demo: "Demo to'lov",
   };
+  const SHIELD =
+    '<svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Z"/><path d="m8 12 3 3 5-6" fill="none" stroke="#173d17" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
   const state = { cfg: null, date: null, slot: null, avail: null, items: {}, payMethod: null };
+  const products = () => (state.cfg.combo ? [state.cfg.combo, ...state.cfg.attractions] : state.cfg.attractions);
 
   // --- Header / menyu ---
   const header = $('#header');
   const sticky = $('#stickyCta');
   const bron = $('#bron');
   function onScroll() {
-    header.classList.toggle('scrolled', window.scrollY > 40);
+    header.classList.toggle('scrolled', window.scrollY > 30);
     const r = bron.getBoundingClientRect();
     sticky.classList.toggle('hide', window.scrollY < 300 || (r.top < window.innerHeight && r.bottom > 0));
   }
@@ -33,13 +36,49 @@
   });
   $('#year').textContent = new Date().getFullYear();
 
+  // --- Afishani to'liq ko'rish ---
+  function openPoster(src, alt) {
+    const box = document.createElement('div');
+    box.className = 'lightbox';
+    box.innerHTML = `<img src="${esc(src)}" alt="${esc(alt)}"><button type="button" aria-label="Yopish">✕</button>`;
+    box.addEventListener('click', (e) => {
+      if (e.target === box || e.target.tagName === 'BUTTON') box.remove();
+    });
+    document.body.appendChild(box);
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') document.querySelectorAll('.lightbox').forEach((b) => b.remove());
+  });
+
   // --- Ma'lumotlarni sahifaga joylash ---
   function fillStatic(cfg) {
-    const byId = Object.fromEntries(cfg.attractions.map((a) => [a.id, a]));
-    document.querySelectorAll('[data-price]').forEach((el) => {
-      el.innerHTML = `${fmt(byId[el.dataset.price].price)}`;
-    });
-    document.querySelectorAll('[data-rule]').forEach((el) => (el.textContent = byId[el.dataset.rule].rules));
+    $('#cards').innerHTML = cfg.attractions
+      .map(
+        (a) => `<article class="card">
+          <div class="card-img"><img src="${esc(a.image)}" alt="${esc(a.name)}" loading="lazy"></div>
+          <div class="card-body">
+            <h3>${esc(a.name)}${a.subtitle ? `<small>${esc(a.subtitle)}</small>` : ''}</h3>
+            <p>${esc(a.short)}</p>
+            <div class="card-meta"><span class="card-price">${fmt(a.price)}</span><span class="limit-chip">${esc(a.summary)}</span></div>
+            <div class="card-actions">
+              <button class="btn btn-line" type="button" data-rules="${a.id}">Qoidalar</button>
+              <button class="btn btn-lime" type="button" data-book="${a.id}">Bron qilish</button>
+            </div>
+          </div></article>`
+      )
+      .join('');
+
+    $('#priceList').innerHTML = products()
+      .map(
+        (a) => `<div class="price-row"><div><b>${esc(a.name)}${a.subtitle ? ' ' + esc(a.subtitle) : ''}</b><span>${esc(a.summary || a.short)}</span></div><strong>${fmt(a.price)}</strong></div>`
+      )
+      .join('');
+
+    $('#tabs').innerHTML = cfg.attractions
+      .map((a, i) => `<button class="tab" role="tab" type="button" data-tab="${a.id}" aria-selected="${i === 0}">${esc(a.name)}</button>`)
+      .join('');
+    showPoster(cfg.attractions[0].id);
+
     document.querySelectorAll('[data-brand]').forEach((el) => (el.textContent = cfg.brand[el.dataset.brand]));
     const tel = 'tel:' + cfg.brand.phone.replace(/[^\d+]/g, '');
     $('#phoneLink').href = tel;
@@ -51,24 +90,50 @@
     $('#routeBtn').href = `https://www.google.com/maps/dir/?api=1&destination=${q}`;
     $('#holdMin').textContent = cfg.holdMinutes;
 
-    $('#priceList').innerHTML = cfg.attractions
-      .map((a) => `<div class="price-row"><div><b>${esc(a.name)}</b><span>${esc(a.short)}</span></div><strong>${fmt(a.price)}</strong></div>`)
-      .join('');
-    const full = cfg.combo.includes.reduce((s, id) => s + byId[id].price, 0);
-    $('#comboName').textContent = cfg.combo.name;
-    $('#comboOld').textContent = fmt(full);
-    $('#comboPrice').textContent = fmt(cfg.combo.price);
-    $('#limits').innerHTML = cfg.attractions.map((a) => `<tr><td><b>${esc(a.name)}</b></td><td>${esc(a.rules)}</td></tr>`).join('');
-
     $('#payMethods').innerHTML = cfg.payMethods
-      .map(
-        (m, i) =>
-          `<label class="pay"><input type="radio" name="pay" value="${m}" ${i === 0 ? 'checked' : ''}> ${PAY_LABELS[m] || m}</label>`
-      )
+      .map((m, i) => `<label class="pay"><input type="radio" name="pay" value="${m}" ${i === 0 ? 'checked' : ''}> ${PAY_LABELS[m] || m}</label>`)
       .join('');
     state.payMethod = cfg.payMethods[0];
     $('#payMethods').addEventListener('change', (e) => (state.payMethod = e.target.value));
   }
+
+  function showPoster(id) {
+    const a = state.cfg.attractions.find((x) => x.id === id);
+    document.querySelectorAll('[data-tab]').forEach((t) => t.setAttribute('aria-selected', t.dataset.tab === id));
+    $('#poster').innerHTML = `<div class="poster" role="tabpanel">
+      <button class="poster-img" type="button" data-poster="${a.id}" aria-label="Afishani kattalashtirish">
+        <picture><source media="(min-width: 821px)" srcset="${esc(a.poster)}"><img src="${esc(a.image)}" alt="${esc(a.name)} afishasi" loading="lazy"></picture>
+        <span class="zoom">🔍 Afishani ko'rish</span></button>
+      <div class="poster-body">
+        <h3>${esc(a.name)}${a.subtitle ? ' ' + esc(a.subtitle) : ''}</h3>
+        <div class="poster-col"><span class="brush">Qoidalar</span><ul class="checks">${a.rules.map((r) => `<li>${esc(r)}</li>`).join('')}</ul></div>
+        <div class="poster-col"><span class="brush red">⚠ ${esc(a.limitsTitle || 'Cheklovlar')}</span><ul class="checks ban">${a.limits.map((r) => `<li>${esc(r)}</li>`).join('')}</ul></div>
+        <div class="motto">${SHIELD}<span>Sizning xavfsizligingiz — bizning ustuvor maqsadimiz!</span></div>
+      </div></div>`;
+  }
+
+  document.addEventListener('click', (e) => {
+    const tab = e.target.closest('[data-tab]');
+    if (tab) return showPoster(tab.dataset.tab);
+    const rules = e.target.closest('[data-rules]');
+    if (rules) {
+      showPoster(rules.dataset.rules);
+      return $('#xavfsizlik').scrollIntoView({ behavior: 'smooth' });
+    }
+    const poster = e.target.closest('[data-poster]');
+    if (poster) {
+      const a = state.cfg.attractions.find((x) => x.id === poster.dataset.poster);
+      return openPoster(a.poster, a.name);
+    }
+    const book = e.target.closest('[data-book]');
+    if (book) {
+      const id = book.dataset.book;
+      if (!state.items[id] && canAdd(id)) state.items[id] = 1;
+      renderTickets();
+      renderSummary();
+      bron.scrollIntoView({ behavior: 'smooth' });
+    }
+  });
 
   // --- Sanalar ---
   function addDays(d, n) {
@@ -78,7 +143,6 @@
   }
   function renderDates() {
     const { today, lastDay } = state.cfg;
-    const box = $('#dates');
     let html = '';
     for (let i = 0; i < 14; i++) {
       const d = addDays(today, i);
@@ -89,7 +153,7 @@
       html += `<button type="button" class="date-chip ${wd === 0 || wd === 6 ? 'weekend' : ''}" data-date="${d}" aria-pressed="${d === state.date}">
         <small>${label}</small><b>${dt.getUTCDate()}</b><small>${MONTHS[dt.getUTCMonth()]}</small></button>`;
     }
-    box.innerHTML = html;
+    $('#dates').innerHTML = html;
     const inp = $('#dateInput');
     inp.min = today;
     inp.max = lastDay;
@@ -114,7 +178,7 @@
       if (state.date !== d) return;
       state.avail = data.slots;
     } catch {
-      $('#slots').innerHTML = '<p class="hint">Internet bilan muammo. Qayta urinib ko\'ring.</p>';
+      $('#slots').innerHTML = "<p class=\"hint\">Internet bilan muammo. Qayta urinib ko'ring.</p>";
       return;
     }
     const firstOpen = state.avail.find((s) => !s.past && Object.values(s.left).some((v) => v > 0));
@@ -131,15 +195,14 @@
 
   // --- Vaqtlar ---
   function renderSlots() {
-    const caps = Object.fromEntries(state.cfg.attractions.map((a) => [a.id, a.capacity]));
+    const cap = state.cfg.attractions.reduce((s, a) => s + a.capacity, 0);
     $('#slots').innerHTML = state.avail
       .map((s) => {
         const total = Object.values(s.left).reduce((a, b) => a + b, 0);
-        const cap = Object.values(caps).reduce((a, b) => a + b, 0);
-        const full = total === 0;
-        const label = s.past ? "O'tgan" : full ? "Joy yo'q" : total / cap < 0.25 ? 'Kam qoldi' : "Bo'sh";
-        return `<button type="button" class="slot ${total / cap < 0.25 ? 'low' : ''}" data-slot="${s.slot}"
-          ${s.past || full ? 'disabled' : ''} aria-pressed="${s.slot === state.slot}"><b>${s.slot}</b><small>${label}</small></button>`;
+        const low = total / cap < 0.25;
+        const label = s.past ? "O'tgan" : total === 0 ? "Joy yo'q" : low ? 'Kam qoldi' : "Bo'sh";
+        return `<button type="button" class="slot ${low ? 'low' : ''}" data-slot="${s.slot}"
+          ${s.past || total === 0 ? 'disabled' : ''} aria-pressed="${s.slot === state.slot}"><b>${s.slot}</b><small>${label}</small></button>`;
       })
       .join('');
   }
@@ -159,19 +222,17 @@
   }
   function seats(items) {
     const out = Object.fromEntries(state.cfg.attractions.map((a) => [a.id, items[a.id] || 0]));
-    if (items.combo) for (const id of state.cfg.combo.includes) out[id] += items.combo;
+    if (items.combo && state.cfg.combo) for (const id of state.cfg.combo.includes) out[id] += items.combo;
     return out;
   }
   function canAdd(id) {
     const left = currentLeft();
     if (!left) return false;
     if ((state.items[id] || 0) >= state.cfg.maxPerItem) return false;
-    const next = { ...state.items, [id]: (state.items[id] || 0) + 1 };
-    const need = seats(next);
+    const need = seats({ ...state.items, [id]: (state.items[id] || 0) + 1 });
     return Object.keys(need).every((k) => need[k] <= left[k]);
   }
   function renderTickets() {
-    const { attractions, combo } = state.cfg;
     const left = currentLeft();
     // Joy kamaysa tanlovni qisqartiramiz
     if (left) {
@@ -179,19 +240,22 @@
         while (state.items[id] > 0 && Object.entries(seats(state.items)).some(([k, v]) => v > left[k])) state.items[id]--;
       }
     }
-    const row = (p, isCombo) => {
-      const n = state.items[p.id] || 0;
-      let leftNote = '';
-      if (left && !isCombo && left[p.id] <= 10) leftNote = `<div class="left">${left[p.id] ? `Faqat ${left[p.id]} ta joy qoldi` : "Bu vaqtda joy yo'q"}</div>`;
-      return `<div class="ticket-row ${isCombo ? 'combo' : ''}">
-        <div><b>${esc(p.name)}</b><span>${fmt(p.price)} / kishi</span>${leftNote}</div>
-        <div class="stepper">
-          <button type="button" data-dec="${p.id}" aria-label="Kamaytirish" ${n ? '' : 'disabled'}>−</button>
-          <output>${n}</output>
-          <button type="button" data-inc="${p.id}" aria-label="Ko'paytirish" ${canAdd(p.id) ? '' : 'disabled'}>+</button>
-        </div></div>`;
-    };
-    $('#tickets').innerHTML = row(combo, true) + attractions.map((a) => row(a, false)).join('');
+    $('#tickets').innerHTML = products()
+      .map((p) => {
+        const n = state.items[p.id] || 0;
+        const isAttr = !p.includes;
+        let note = '';
+        if (left && isAttr && left[p.id] <= 10) note = `<div class="left">${left[p.id] ? `Faqat ${left[p.id]} ta joy qoldi` : "Bu vaqtda joy yo'q"}</div>`;
+        return `<div class="ticket-row ${n ? 'on' : ''}">
+          ${p.image ? `<img src="${esc(p.image)}" alt="">` : ''}
+          <div class="info"><b>${esc(p.name)}</b><span>${fmt(p.price)} / kishi</span>${note}</div>
+          <div class="stepper">
+            <button type="button" data-dec="${p.id}" aria-label="Kamaytirish" ${n ? '' : 'disabled'}>−</button>
+            <output>${n}</output>
+            <button type="button" data-inc="${p.id}" aria-label="Ko'paytirish" ${canAdd(p.id) ? '' : 'disabled'}>+</button>
+          </div></div>`;
+      })
+      .join('');
   }
   $('#tickets').addEventListener('click', (e) => {
     const inc = e.target.closest('[data-inc]');
@@ -205,15 +269,13 @@
 
   // --- Xulosa ---
   function renderSummary() {
-    const { attractions, combo } = state.cfg;
-    const products = [combo, ...attractions];
     if (state.date) {
       const dt = new Date(state.date + 'T00:00:00Z');
       $('#sumWhen').className = 'sum-line';
       $('#sumWhen').innerHTML = `<span>${dt.getUTCDate()} ${MONTHS[dt.getUTCMonth()]}, ${DAYS[dt.getUTCDay()]}</span><b>${state.slot || '—'}</b>`;
     }
     let total = 0;
-    $('#sumLines').innerHTML = products
+    $('#sumLines').innerHTML = products()
       .filter((p) => state.items[p.id])
       .map((p) => {
         const n = state.items[p.id];
@@ -247,6 +309,7 @@
     const errs = [];
     if (name.length < 2) errs.push('Ismingizni kiriting');
     if (phone.replace(/\D/g, '').length !== 12) errs.push("Telefon raqamini to'liq kiriting");
+    if (!$('#agree').checked) errs.push('Qoidalar bilan tanishganingizni belgilang');
     if (errs.length) {
       errBox.textContent = errs.join('. ');
       return;

@@ -1,5 +1,5 @@
-// Parkning asosiy sozlamalari: narxlar, ish vaqti, sig'im, aloqa.
-// Narxlarni o'zgartirish uchun faqat shu faylni tahrirlang.
+// Parkning asosiy sozlamalari: narxlar, qoidalar, ish vaqti, sig'im, aloqa.
+// Narx yoki qoidani o'zgartirish uchun faqat shu faylni tahrirlang.
 
 module.exports = {
   brand: {
@@ -29,35 +29,106 @@ module.exports = {
   attractions: [
     {
       id: 'zipline',
-      name: 'Zipline',
+      name: "Zipline (o'tirib)",
       price: 150000,
       capacity: 40,
-      short: "Tog' ustidan qushdek uchib o'ting",
-      rules: "7 yoshdan katta, vazn 30–120 kg",
+      image: '/assets/img/zipline.jpg',
+      poster: '/assets/img/zipline-poster.jpg',
+      short: "Minoradan o'tirgan holda arqon bo'ylab o'rmon ustidan uchib o'ting.",
+      summary: "40–120 kg, bo'y 140 sm dan",
+      rules: [
+        'Faqat berilgan jihozlardan foydalaning.',
+        'Barcha kamarlar instruktor tomonidan tekshirilishi shart.',
+        "Qo'llaringizni xavfsizlik kamarlarida ushlab turing.",
+        "Xodimlarning ko'rsatmalariga amal qiling.",
+        'Mustaqil ravishda tormoz qilish taqiqlanadi.',
+      ],
+      limitsTitle: 'Cheklovlar',
+      limits: [
+        'Vazn: 40–120 kg.',
+        "Bo'yi: 140 sm dan boshlab.",
+        'Homilador ayollarga taqiqlanadi.',
+        "Yurak va umurtqa pog'onasi bilan bog'liq jiddiy kasalligi borlarga taqiqlanadi.",
+      ],
     },
     {
-      id: 'bridge',
-      name: "Osma ko'prik",
-      price: 50000,
-      capacity: 80,
-      short: "Daralar ustidagi chayqaluvchi ko'prik",
-      rules: '5 yoshdan katta (12 yoshgacha kattalar bilan)',
+      id: 'superman',
+      name: 'Zipline Superman',
+      price: 250000,
+      capacity: 30,
+      image: '/assets/img/superman.jpg',
+      poster: '/assets/img/superman-poster.jpg',
+      short: "Superman kabi yotgan holda, qo'llarni yoyib, qushdek parvoz qiling.",
+      summary: '40–120 kg, 14 yoshdan katta',
+      rules: [
+        'Parvoz faqat Superman holatida amalga oshiriladi.',
+        "Bosh yuqoriga ko'tarilgan bo'lishi kerak.",
+        "Oyoqlar biroz ajratilgan bo'lishi kerak.",
+        'Xavfsizlik kamarlarini yechishga urinmang.',
+        "To'xtagandan so'ng instruktor ruxsatisiz joydan turmang.",
+      ],
+      limitsTitle: 'Cheklovlar',
+      limits: [
+        "Og'irlik: 40–120 kg.",
+        'Yosh: 14 yoshdan katta.',
+        'Homilador ayollarga taqiqlanadi.',
+        "Yurak va umurtqa pog'onasi kasalliklari va epilepsiya bilan og'riganlar uchun taqiqlanadi.",
+        "Spirtli ichimlik yoki narkotik moddalar ta'sirida bo'lgan shaxslar uchun taqiqlanadi.",
+      ],
     },
     {
       id: 'swing',
-      name: 'Giga belanchak',
-      price: 120000,
+      name: 'Giant Swing',
+      price: 150000,
       capacity: 30,
-      short: "Jarlik ustida ulkan belanchakda erkin tushish",
-      rules: "12 yoshdan katta, vazn 40–110 kg",
+      image: '/assets/img/swing.jpg',
+      poster: '/assets/img/swing-poster.jpg',
+      short: "Tog'lar fonida ulkan belanchakda baland tebraning — do'stlar bilan birga.",
+      summary: '40–120 kg',
+      rules: [
+        'Ishga tushirishdan oldin instruktor xavfsizlik kamarlarini tekshiradi.',
+        "Tebranish vaqtida qo'ltiqlardan ushlang.",
+        'Xavfsizlik kamarlarini yechishga urinmang.',
+        "To'xtagandan so'ng instruktor ruxsatisiz joydan turmang.",
+      ],
+      limitsTitle: 'Cheklamalar',
+      limits: [
+        "Og'irlik: 40–120 kg.",
+        'Homilador ayollarga taqiqlanadi.',
+        "Yurak-qon tomir kasalliklari, umurtqa pog'onasi kasalliklari va epilepsiya bilan og'riganlar uchun taqiqlanadi.",
+        "Spirtli ichimlik yoki narkotik moddalar ta'sirida bo'lgan shaxslar uchun taqiqlanadi.",
+      ],
+    },
+    {
+      id: 'bridge',
+      name: "Quvnoq ko'prik",
+      subtitle: '+ tomosha maydonchasi',
+      price: 40000,
+      capacity: 80,
+      image: '/assets/img/bridge.jpg',
+      poster: '/assets/img/bridge-poster.jpg',
+      short: "Osma ko'prikdan o'tib, tomosha maydonchasidan Ugam manzarasini kuzating.",
+      summary: '12 yoshgacha — kattalar bilan',
+      rules: [
+        'Uyushqoqlik bilan harakatlaning, yugurmang.',
+        "Ko'prikni chayqatmang.",
+        "Qo'ltiqlardan ushlab turing.",
+        "To'siqlardan oshib o'tmang.",
+        "12 yoshgacha bo'lgan bolalar faqat kattalar bilan.",
+        "Xodimlar ko'rsatmalariga rioya qiling.",
+      ],
+      limitsTitle: 'Taqiqlanadi',
+      limits: [
+        'Sakrash.',
+        'Turtishib itarish.',
+        'Narsalarni pastga tashlash.',
+        "Spirtli ichimlik yoki narkotik moddalar ta'sirida bo'lish.",
+      ],
     },
   ],
 
-  combo: {
-    id: 'combo',
-    name: 'Gravity Combo — 3 tasi birga',
-    price: 280000,
-    includes: ['zipline', 'bridge', 'swing'],
-    short: 'Hamma attraksion bitta chiptada, arzonroq',
-  },
+  // Paket (bir nechta attraksion bitta chiptada, chegirma bilan).
+  // Yoqish uchun masalan:
+  // combo: { id: 'combo', name: 'Gravity Combo', price: 300000, includes: ['zipline', 'swing', 'bridge'], short: '...' },
+  combo: null,
 };

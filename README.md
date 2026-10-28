@@ -1,6 +1,6 @@
 # Ugam Gravity Park — sayt va onlayn bron
 
-Zipline, osma ko'prik va giga belanchak uchun sayt. Mijoz uydan turib sana va vaqtni tanlaydi,
+Zipline, Zipline Superman, Giant Swing va Quvnoq ko'prik uchun sayt. Mijoz uydan turib sana va vaqtni tanlaydi,
 Payme yoki Click orqali to'laydi va QR-chipta oladi. Bitta chipta bilan tanlangan barcha
 attraksionlardan o'tadi.
 
@@ -22,9 +22,9 @@ npm test
 Node.js 22.13+ kerak (ma'lumotlar bazasi — ichki SQLite, `data/park.db`).
 
 ## Sozlash
-- **Narxlar, ish vaqti, sig'im, telefon, manzil:** `src/config.js`
+- **Narxlar, qoidalar, ish vaqti, sig'im, telefon, manzil:** `src/config.js` (combo paket ham shu yerda yoqiladi)
 - **Brend ranglari:** `public/styles.css` boshidagi `:root` qismi
-- **Logotip:** `public/assets/logo.svg`
+- **Logotip va rasmlar:** `public/assets/` (Instagram afishalaridan olingan)
 
 ## To'lov tizimlarini ulash
 **Payme** (business.payme.uz): endpoint — `https://SAYT/api/payme`, hisob maydoni — `order_id`.

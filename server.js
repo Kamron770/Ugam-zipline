@@ -88,7 +88,7 @@ function createApp(env = process.env, { dbFile, now } = {}) {
   app.get('/api/tickets/:code/qr.svg', async (req, res) => {
     const b = bookings.getByCode(req.params.code);
     if (!b) return res.status(404).end();
-    const svg = await QRCode.toString(ticketUrl(b), { type: 'svg', margin: 1, color: { dark: '#0d2a20', light: '#ffffff' } });
+    const svg = await QRCode.toString(ticketUrl(b), { type: 'svg', margin: 1, color: { dark: '#173d17', light: '#ffffff' } });
     res.type('image/svg+xml').send(svg);
   });
 

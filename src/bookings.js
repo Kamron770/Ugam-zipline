@@ -3,7 +3,7 @@ const crypto = require('node:crypto');
 // Bron logikasi: narx hisoblash, bo'sh joylarni tekshirish, holatni o'zgartirish.
 function createBookingService(db, config, now = () => Date.now()) {
   const attractionIds = config.attractions.map((a) => a.id);
-  const products = [...config.attractions, config.combo];
+  const products = config.combo ? [...config.attractions, config.combo] : [...config.attractions];
   const priceOf = Object.fromEntries(products.map((p) => [p.id, p.price]));
 
   function tashkentNow() {
@@ -21,7 +21,7 @@ function createBookingService(db, config, now = () => Date.now()) {
   // Bitta bron har bir attraksiondan nechta joy egallaydi (combo hammasiga kiradi)
   function seatsFor(items) {
     const seats = Object.fromEntries(attractionIds.map((id) => [id, items[id] || 0]));
-    if (items.combo) for (const id of config.combo.includes) seats[id] += items.combo;
+    if (items.combo && config.combo) for (const id of config.combo.includes) seats[id] += items.combo;
     return seats;
   }
 

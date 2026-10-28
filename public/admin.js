@@ -20,7 +20,7 @@
     const date = $('#date').value;
     const data = await api(`/api/admin/bookings?date=${date}`);
     const names = Object.fromEntries(cfg.attractions.map((a) => [a.id, a.name]));
-    names.combo = 'Combo';
+    if (cfg.combo) names.combo = cfg.combo.name;
     $('#stats').innerHTML =
       `<div class="stat"><small>To'langan bron</small><b>${data.stats.paidCount}</b></div>` +
       `<div class="stat"><small>Tushum</small><b>${fmt(data.stats.revenue)}</b></div>` +

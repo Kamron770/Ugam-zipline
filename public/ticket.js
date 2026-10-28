@@ -21,7 +21,7 @@
 
   const names = () => {
     const m = Object.fromEntries(cfg.attractions.map((a) => [a.id, a.name]));
-    m.combo = cfg.combo.name;
+    if (cfg.combo) m.combo = cfg.combo.name;
     return m;
   };
 
@@ -34,10 +34,10 @@
       .join('');
     let action = '';
     if (t.status === 'pending')
-      action = `<a class="btn btn-sun" style="width:100%;margin-top:16px" href="${esc(t.payUrl)}">To'lovni yakunlash</a>
+      action = `<a class="btn btn-lime" style="width:100%;margin-top:16px" href="${esc(t.payUrl)}">To'lovni yakunlash</a>
         <p class="hint center" style="margin-top:10px">To'lov tasdiqlangach bu sahifa o'zi yangilanadi.</p>`;
     if (t.status === 'expired')
-      action = `<a class="btn btn-sun" style="width:100%;margin-top:16px" href="/#bron">Qaytadan bron qilish</a>`;
+      action = `<a class="btn btn-lime" style="width:100%;margin-top:16px" href="/#bron">Qaytadan bron qilish</a>`;
 
     const usage = cfg.attractions
       .filter((a) => t.allowance[a.id] > 0)
@@ -53,8 +53,9 @@
 
     box.innerHTML = `
       <div class="ticket-head">
-        <h1>Ugam Gravity Park</h1>
-        <p>${d} ${MONTHS[mo - 1]} ${y} · ${esc(t.slot)}</p>
+        <img src="/assets/logo.png" alt="">
+        <div><h1>Ugam Gravity Park</h1>
+        <p>${d} ${MONTHS[mo - 1]} ${y} · ${esc(t.slot)}</p></div>
       </div>
       <div class="ticket-body">
         <p class="center"><span class="status ${cls}">${label}</span></p>
