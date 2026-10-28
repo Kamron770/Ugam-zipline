@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Demo to'lov — Ugam Gravity Park</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Unbounded:wght@600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="page">
+    <div class="ticket">
+      <div class="ticket-head"><h1>Demo to'lov</h1><p>Payme/Click ulanmaguncha sinov rejimi</p></div>
+      <div class="ticket-body">
+        <p>Bu sahifa faqat sinov uchun. Haqiqiy pul yechilmaydi. Payme yoki Click kalitlari kiritilgach, mijozlar to'g'ridan-to'g'ri to'lov tizimiga yo'naltiriladi.</p>
+        <div class="kv"><span>Bron kodi</span><b id="code"></b></div>
+        <div class="kv"><span>Summa</span><b id="sum">…</b></div>
+        <button class="btn btn-sun" id="pay" style="width:100%;margin-top:16px">To'lovni tasdiqlash</button>
+        <p class="errors" id="err"></p>
+      </div>
+    </div>
+  </div>
+  <script>
+    const code = new URLSearchParams(location.search).get('code') || '';
+    const fmt = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + " so'm";
+    document.getElementById('code').textContent = code;
+    fetch('/api/tickets/' + encodeURIComponent(code)).then((r) => r.json()).then((t) => {
+      document.getElementById('sum').textContent = t.total ? fmt(t.total) : '—';
+    });
+    document.getElementById('pay').onclick = async (e) => {
+      e.target.disabled = true;
+      const r = await fetch('/api/demo-pay/' + encodeURIComponent(code), { method: 'POST' });
+      const d = await r.json();
+      if (r.ok) location.href = d.ticketUrl;
+      else { document.getElementById('err').textContent = d.error; e.target.disabled = false; }
+    };
+  </script>
+</body>
+</html>

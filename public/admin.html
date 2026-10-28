@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin — Ugam Gravity Park</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Unbounded:wght@600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="admin">
+    <div class="wrap">
+      <div class="admin-top">
+        <h1>Bronlar paneli</h1>
+        <button class="btn btn-line hidden" id="logout">Chiqish</button>
+      </div>
+
+      <form class="panel" id="login">
+        <div class="row">
+          <div class="field"><label for="pass">Admin paroli</label><input type="password" id="pass" autocomplete="current-password"></div>
+          <button class="btn btn-dark">Kirish</button>
+        </div>
+        <p class="errors" id="loginErr"></p>
+      </form>
+
+      <div id="app" class="hidden">
+        <form class="panel" id="find">
+          <div class="row">
+            <div class="field"><label for="code">Chipta kodi (yoki QR-ni telefon kamerasi bilan skanerlang)</label><input id="code" placeholder="UG-XXXXXXXX" autocapitalize="characters"></div>
+            <button class="btn btn-sun">Ochish</button>
+          </div>
+        </form>
+
+        <div class="panel">
+          <div class="row" style="margin-bottom:16px">
+            <div class="field"><label for="date">Sana</label><input type="date" id="date"></div>
+            <button class="btn btn-line" type="button" id="reload">Yangilash</button>
+          </div>
+          <div class="stats" id="stats"></div>
+          <div class="table-scroll">
+            <table class="blist">
+              <thead><tr><th>Vaqt</th><th>Kod</th><th>Mijoz</th><th>Chiptalar</th><th>Summa</th><th>Holat</th><th>O'tdi</th></tr></thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="/admin.js"></script>
+</body>
+</html>
