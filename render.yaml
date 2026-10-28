@@ -1,0 +1,15 @@
+# Render.com uchun sozlama (Blueprint). Sinov uchun bepul tarif.
+services:
+  - type: web
+    name: ugam-gravity-park
+    runtime: node
+    plan: free
+    branch: claude/gravity-park-website-design-l9omhw
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/config
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.0
+      - key: ADMIN_PASSWORD
+        sync: false

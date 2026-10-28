@@ -19,7 +19,7 @@ function loadEnvFile() {
 function createApp(env = process.env, { dbFile, now } = {}) {
   const db = open(dbFile || env.DB_FILE || path.join(__dirname, 'data', 'park.db'));
   const bookings = createBookingService(db, config, now);
-  const baseUrl = (env.BASE_URL || `http://localhost:${env.PORT || 3000}`).replace(/\/$/, '');
+  const baseUrl = (env.BASE_URL || env.RENDER_EXTERNAL_URL || `http://localhost:${env.PORT || 3000}`).replace(/\/$/, '');
 
   const paymeCfg = { merchantId: env.PAYME_MERCHANT_ID, key: env.PAYME_KEY, test: env.PAYME_TEST === '1' };
   const clickCfg = {
