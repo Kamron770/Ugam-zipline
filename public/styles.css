@@ -95,18 +95,16 @@ p { margin: 0 0 1em; }
 .hero { position: relative; min-height: 100svh; display: flex; align-items: center; overflow: hidden; background: var(--mist); }
 .hero-art { position: absolute; inset: 0; }
 .hero-art svg { width: 100%; height: 100%; }
-.hero .wrap { position: relative; z-index: 2; padding: 110px 0 70px; display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; align-items: center; }
+.hero .wrap { position: relative; z-index: 2; padding: 110px 0 70px; }
+.hero .wrap > div { max-width: 760px; }
 .hero h1 { font-size: clamp(3rem, 9vw, 6.2rem); text-transform: uppercase; color: var(--pine); letter-spacing: -.01em; }
 .hero h1 em { font-style: normal; color: var(--lime-dark); display: block; }
 .hero p { font-size: clamp(1.02rem, 2.2vw, 1.2rem); max-width: 540px; color: #2c3a2a; font-weight: 600; }
 .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 26px; }
 .hero-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 28px; }
 .badge { background: var(--pine); color: #fff; padding: .5em 1em; border-radius: 999px; font-weight: 700; font-size: .85rem; }
-.hero-photo { position: relative; }
-.hero-photo img { border-radius: 26px; box-shadow: 0 30px 60px rgba(23,61,23,.25); border: 6px solid #fff; transform: rotate(2deg); }
 @media (max-width: 900px) {
-  .hero .wrap { grid-template-columns: 1fr; padding-top: 100px; gap: 28px; }
-  .hero-photo { max-width: 440px; }
+  .hero .wrap { padding-top: 100px; }
 }
 
 /* "Narxi" belgisi — afishadagidek */
@@ -354,3 +352,31 @@ p { margin: 0 0 1em; }
 .blist a { font-weight: 800; color: var(--pine); }
 .table-scroll { overflow-x: auto; }
 .hidden { display: none !important; }
+
+/* Admin: skaner va attraksionlar */
+.admin-tabs { margin: 0 0 16px; }
+.field textarea { width: 100%; font: inherit; padding: 12px 14px; border: 2px solid var(--line); border-radius: 14px; background: #fff; resize: vertical; }
+.scanner { position: relative; background: #0e240e; border-radius: 18px; overflow: hidden; aspect-ratio: 4/3; max-height: 60svh; display: grid; place-items: center; }
+.scanner video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none; }
+.scanner.on video { display: block; }
+.scan-frame { display: none; position: absolute; inset: 18% 22%; border: 4px solid var(--lime); border-radius: 18px; box-shadow: 0 0 0 999px rgba(0,0,0,.35); }
+.scanner.on .scan-frame { display: block; }
+.scanner .btn { position: relative; z-index: 1; }
+.scan-result { border-left: 8px solid var(--lime); }
+.scan-result.bad { border-left-color: var(--red); background: #fff6f6; }
+.scan-result.warn { border-left-color: #e0a100; }
+.big-msg { font: 700 1.35rem/1.25 var(--font-head); color: var(--pine); margin: 6px 0 14px; }
+.scan-result.bad .big-msg { color: var(--red); }
+.btn.big { flex: 1 1 200px; padding: 1.1em; font-size: 1.1rem; }
+.warn-line { background: #fff4d6; color: #8a5a00; font-weight: 800; padding: 8px 12px; border-radius: 10px; }
+.flash { background: #e5f5cf; color: #2f5d06; font-weight: 800; padding: 8px 12px; border-radius: 10px; }
+.use-row.here { outline: 3px solid var(--lime); }
+.attr-list { display: grid; gap: 10px; }
+.attr-item { display: flex; align-items: center; gap: 14px; background: var(--paper); border-radius: 16px; padding: 12px; box-shadow: var(--shadow); }
+.attr-item.off { opacity: .6; }
+.attr-item img, .attr-item .noimg { width: 84px; height: 60px; object-fit: cover; object-position: top; border-radius: 10px; flex: 0 0 auto; background: var(--mist); display: grid; place-items: center; font-size: 1.6rem; }
+.attr-item .info { flex: 1; min-width: 0; display: grid; }
+.attr-item b { font: 700 1.15rem var(--font-head); text-transform: uppercase; color: var(--pine); }
+.attr-item span { font-size: .88rem; color: var(--muted); }
+.img-prev { width: 100%; max-height: 160px; object-fit: contain; background: var(--mist); border-radius: 12px; margin-bottom: 8px; }
+.img-prev:not([src]), .img-prev[src=''] { display: none; }

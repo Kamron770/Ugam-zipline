@@ -5,6 +5,8 @@ const QRCode = require('qrcode');
 const config = require('./src/config');
 const { open } = require('./src/db');
 const { createBookingService } = require('./src/bookings');
+const { createAttractionStore } = require('./src/attractions');
+const fs = require('node:fs');
 const payme = require('./src/payme');
 const click = require('./src/click');
 
@@ -18,7 +20,9 @@ function loadEnvFile() {
 
 function createApp(env = process.env, { dbFile, now } = {}) {
   const db = open(dbFile || env.DB_FILE || path.join(__dirname, 'data', 'park.db'));
-  const bookings = createBookingService(db, config, now);
+  const store = createAttractionStore(db, config.attractions, now);
+  const bookings = createBookingService(db, config, store, now);
+  const uploadDir = env.UPLOAD_DIR || path.join(__dirname, 'data', 'uploads');
   const baseUrl = (env.BASE_URL || env.RENDER_EXTERNAL_URL || `http://localhost:${env.PORT || 3000}`).replace(/\/$/, '');
 
   const paymeCfg = { merchantId: env.PAYME_MERCHANT_ID, key: env.PAYME_KEY, test: env.PAYME_TEST === '1' };
@@ -33,11 +37,38 @@ function createApp(env = process.env, { dbFile, now } = {}) {
   const demo = env.PAYMENT_DEMO === '1' || (env.PAYMENT_DEMO !== '0' && methods.length === 0);
   if (demo) methods.push('demo');
 
+  // Xodimlar uchun himoya (ADMIN_PASSWORD)
+  function admin(req, res, next) {
+    const pass = env.ADMIN_PASSWORD || '';
+    const given = String(req.headers['x-admin-token'] || '');
+    const ok =
+      pass.length > 0 &&
+      given.length === pass.length &&
+      crypto.timingSafeEqual(Buffer.from(given), Buffer.from(pass));
+    if (!ok) return res.status(401).json({ error: "Parol noto'g'ri" });
+    next();
+  }
+
   const app = express();
   app.disable('x-powered-by');
+
+  // Rasm yuklash (katta hajm, shuning uchun umumiy JSON chegarasidan oldin)
+  app.post('/api/admin/upload', admin, express.json({ limit: '8mb' }), (req, res) => {
+    const m = /^data:image\/(jpeg|png|webp);base64,(.+)$/.exec(String((req.body || {}).dataUrl || ''));
+    if (!m) return res.status(400).json({ error: 'Faqat JPG, PNG yoki WEBP rasm' });
+    const buf = Buffer.from(m[2], 'base64');
+    if (buf.length > 6 * 1024 * 1024) return res.status(400).json({ error: 'Rasm 6 MB dan katta' });
+    fs.mkdirSync(uploadDir, { recursive: true });
+    const name = `${Date.now()}-${crypto.randomBytes(4).toString('hex')}.${m[1] === 'jpeg' ? 'jpg' : m[1]}`;
+    fs.writeFileSync(path.join(uploadDir, name), buf);
+    res.status(201).json({ url: `/uploads/${name}` });
+  });
+
   app.use(express.json({ limit: '50kb' }));
   app.use(express.urlencoded({ extended: false, limit: '50kb' }));
   app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
+  app.use('/uploads', express.static(uploadDir, { maxAge: '30d', fallthrough: false }));
+  app.get('/vendor/jsQR.js', (req, res) => res.sendFile(require.resolve('jsqr/dist/jsQR.js')));
 
   const ticketUrl = (b) => `${baseUrl}/ticket/${b.code}`;
 
@@ -52,7 +83,7 @@ function createApp(env = process.env, { dbFile, now } = {}) {
     res.json({
       brand: config.brand,
       slots: config.slots,
-      attractions: config.attractions,
+      attractions: store.list(),
       combo: config.combo,
       maxPerItem: config.maxPerItem,
       holdMinutes: config.holdMinutes,
@@ -117,16 +148,17 @@ function createApp(env = process.env, { dbFile, now } = {}) {
   app.post('/api/click/complete', clickHandlers.complete);
 
   // --- Admin (xodimlar) ---
-  function admin(req, res, next) {
-    const pass = env.ADMIN_PASSWORD || '';
-    const given = String(req.headers['x-admin-token'] || '');
-    const ok =
-      pass.length > 0 &&
-      given.length === pass.length &&
-      crypto.timingSafeEqual(Buffer.from(given), Buffer.from(pass));
-    if (!ok) return res.status(401).json({ error: "Parol noto'g'ri" });
-    next();
-  }
+  app.get('/api/admin/attractions', admin, (req, res) => res.json(store.list({ includeInactive: true })));
+  app.post('/api/admin/attractions', admin, (req, res) => {
+    const r = store.create(req.body || {});
+    if (r.errors) return res.status(400).json({ errors: r.errors });
+    res.status(201).json(r.attraction);
+  });
+  app.put('/api/admin/attractions/:id', admin, (req, res) => {
+    const r = store.update(req.params.id, req.body || {});
+    if (r.errors) return res.status(r.errors[0] === 'Attraksion topilmadi' ? 404 : 400).json({ errors: r.errors });
+    res.json(r.attraction);
+  });
 
   app.get('/api/admin/bookings', admin, (req, res) => {
     const date = String(req.query.date || bookings.today());
@@ -145,6 +177,13 @@ function createApp(env = process.env, { dbFile, now } = {}) {
         people: paid.reduce(
           (acc, b) => {
             for (const [k, v] of Object.entries(b.allowance)) acc[k] = (acc[k] || 0) + v;
+            return acc;
+          },
+          {}
+        ),
+        flown: paid.reduce(
+          (acc, b) => {
+            for (const [k, v] of Object.entries(b.used)) acc[k] = (acc[k] || 0) + v;
             return acc;
           },
           {}

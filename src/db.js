@@ -35,6 +35,21 @@ function open(file) {
       cancel_time INTEGER NOT NULL DEFAULT 0,
       reason INTEGER
     );
+    CREATE TABLE IF NOT EXISTS attractions (
+      id TEXT PRIMARY KEY,
+      data TEXT NOT NULL,
+      sort INTEGER NOT NULL DEFAULT 0,
+      active INTEGER NOT NULL DEFAULT 1,
+      updated_at INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS checkins (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      booking_id INTEGER NOT NULL,
+      attraction TEXT NOT NULL,
+      count INTEGER NOT NULL,
+      at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS checkins_at ON checkins(at);
     CREATE TABLE IF NOT EXISTS click_tx (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       click_trans_id TEXT NOT NULL,

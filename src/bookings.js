@@ -1,10 +1,10 @@
 const crypto = require('node:crypto');
 
 // Bron logikasi: narx hisoblash, bo'sh joylarni tekshirish, holatni o'zgartirish.
-function createBookingService(db, config, now = () => Date.now()) {
-  const attractionIds = config.attractions.map((a) => a.id);
-  const products = config.combo ? [...config.attractions, config.combo] : [...config.attractions];
-  const priceOf = Object.fromEntries(products.map((p) => [p.id, p.price]));
+// store — attraksionlar ro'yxati (admin paneldan o'zgaradi, shuning uchun har safar yangidan o'qiladi)
+function createBookingService(db, config, store, now = () => Date.now()) {
+  const active = () => store.list();
+  const products = () => (config.combo ? [...active(), config.combo] : active());
 
   function tashkentNow() {
     return new Date(now() + config.timezoneOffsetHours * 3600 * 1000);
@@ -20,7 +20,8 @@ function createBookingService(db, config, now = () => Date.now()) {
 
   // Bitta bron har bir attraksiondan nechta joy egallaydi (combo hammasiga kiradi)
   function seatsFor(items) {
-    const seats = Object.fromEntries(attractionIds.map((id) => [id, items[id] || 0]));
+    const ids = new Set([...active().map((a) => a.id), ...Object.keys(items).filter((k) => k !== 'combo')]);
+    const seats = Object.fromEntries([...ids].map((id) => [id, items[id] || 0]));
     if (items.combo && config.combo) for (const id of config.combo.includes) seats[id] += items.combo;
     return seats;
   }
@@ -38,10 +39,11 @@ function createBookingService(db, config, now = () => Date.now()) {
          AND (status = 'paid' OR (status = 'pending' AND expires_at > ?))`
       )
       .all(date, slot, excludeId, now());
-    const taken = Object.fromEntries(attractionIds.map((id) => [id, 0]));
+    const ids = active().map((a) => a.id);
+    const taken = Object.fromEntries(ids.map((id) => [id, 0]));
     for (const r of rows) {
       const s = seatsFor(JSON.parse(r.items));
-      for (const id of attractionIds) taken[id] += s[id];
+      for (const id of ids) taken[id] += s[id] || 0;
     }
     return taken;
   }
@@ -55,11 +57,10 @@ function createBookingService(db, config, now = () => Date.now()) {
   }
 
   function availability(date) {
+    const list = active();
     return config.slots.map((slot) => {
       const taken = takenSeats(date, slot);
-      const left = Object.fromEntries(
-        config.attractions.map((a) => [a.id, Math.max(0, a.capacity - taken[a.id])])
-      );
+      const left = Object.fromEntries(list.map((a) => [a.id, Math.max(0, a.capacity - taken[a.id])]));
       return { slot, past: slotIsPast(date, slot), left };
     });
   }
@@ -67,7 +68,7 @@ function createBookingService(db, config, now = () => Date.now()) {
   function fits(date, slot, items, excludeId = 0) {
     const taken = takenSeats(date, slot, excludeId);
     const need = seatsFor(items);
-    return config.attractions.every((a) => taken[a.id] + need[a.id] <= a.capacity);
+    return active().every((a) => taken[a.id] + (need[a.id] || 0) <= a.capacity);
   }
 
   function validate(input) {
@@ -86,7 +87,7 @@ function createBookingService(db, config, now = () => Date.now()) {
 
     const items = {};
     let count = 0;
-    for (const p of products) {
+    for (const p of products()) {
       const n = Number((input.items || {})[p.id] || 0);
       if (!Number.isInteger(n) || n < 0 || n > config.maxPerItem) {
         errors.push("Chipta soni noto'g'ri");
@@ -111,6 +112,7 @@ function createBookingService(db, config, now = () => Date.now()) {
   }
 
   function total(items) {
+    const priceOf = Object.fromEntries(products().map((p) => [p.id, p.price]));
     return Object.entries(items).reduce((s, [id, n]) => s + priceOf[id] * n, 0);
   }
 
@@ -194,13 +196,15 @@ function createBookingService(db, config, now = () => Date.now()) {
     const b = getByCode(code);
     if (!b) return { error: 'Bron topilmadi' };
     if (b.status !== 'paid') return { error: "Bron to'lanmagan" };
-    if (!attractionIds.includes(attractionId)) return { error: 'Attraksion noto\'g\'ri' };
-    const allowed = allowance(b)[attractionId];
+    const allowed = allowance(b)[attractionId] || 0;
+    if (!allowed) return { error: "Bu chiptada ushbu attraksion yo'q" };
     const used = b.used[attractionId] || 0;
+    if (used >= allowed) return { error: "Bu attraksiondan hamma o'tib bo'lgan" };
     const n = Math.max(1, Math.floor(Number(count) || 1));
     if (used + n > allowed) return { error: `Bu attraksionda faqat ${allowed - used} ta joy qolgan` };
     b.used[attractionId] = used + n;
     db.prepare('UPDATE bookings SET used = ? WHERE id = ?').run(JSON.stringify(b.used), b.id);
+    db.prepare('INSERT INTO checkins (booking_id, attraction, count, at) VALUES (?, ?, ?, ?)').run(b.id, attractionId, n, now());
     return { booking: getById(b.id) };
   }
 
@@ -227,6 +231,12 @@ function createBookingService(db, config, now = () => Date.now()) {
       payMethod: b.pay_method,
       allowance: allowance(b),
       used: b.used,
+      names: Object.fromEntries(
+        [...Object.keys(b.items), ...Object.keys(allowance(b))].map((k) => [
+          k,
+          k === 'combo' && config.combo ? config.combo.name : (store.get(k) || {}).name || k,
+        ])
+      ),
     };
   }
 

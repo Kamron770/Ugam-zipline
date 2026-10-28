@@ -26,7 +26,7 @@
   };
 
   function render(t) {
-    const n = names();
+    const n = { ...names(), ...(t.names || {}) };
     const [y, mo, d] = t.date.split('-').map(Number);
     const [label, cls] = STATUS[t.status] || [t.status, ''];
     const items = Object.entries(t.items)
@@ -39,15 +39,16 @@
     if (t.status === 'expired')
       action = `<a class="btn btn-lime" style="width:100%;margin-top:16px" href="/#bron">Qaytadan bron qilish</a>`;
 
-    const usage = cfg.attractions
-      .filter((a) => t.allowance[a.id] > 0)
+    const usage = Object.keys(t.allowance)
+      .filter((id) => t.allowance[id] > 0)
+      .map((id) => ({ id, name: n[id] || id }))
       .map((a) => {
         const used = t.used[a.id] || 0;
         const all = t.allowance[a.id];
         const btn = token && t.status === 'paid' && used < all
           ? `<span><button class="btn btn-dark" data-in="${a.id}" data-n="1">+1</button> <button class="btn btn-line" data-in="${a.id}" data-n="${all - used}">Hammasi</button></span>`
           : '';
-        return `<div class="use-row"><span><b>${esc(a.name)}</b><br><small>${used} / ${all} o'tdi</small></span>${btn}</div>`;
+        return `<div class="use-row"><span><b>${esc(a.name)}</b><br><small>${used} / ${all} uchdi</small></span>${btn}</div>`;
       })
       .join('');
 

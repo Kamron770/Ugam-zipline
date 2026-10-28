@@ -19,6 +19,8 @@ const env = {
 let server, base;
 
 before(async () => {
+  const os = require('node:os'); const fs = require('node:fs'); const path = require('node:path');
+  env.UPLOAD_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'ugam-up-'));
   const { app } = createApp(env, { dbFile: ':memory:', now });
   server = app.listen(0);
   await new Promise((r) => server.once('listening', r));
@@ -173,4 +175,57 @@ test("admin: parol, ro'yxat va attraksionda belgilash", async () => {
   assert.equal(r.status, 400);
   r = await post('/api/admin/checkin', { code: b.code, attraction: 'swing', count: 1 }, h);
   assert.equal(r.status, 200);
+});
+
+test("admin yangi attraksion qo'shadi, tahrirlaydi va sotuvdan oladi", async () => {
+  const h = { 'x-admin-token': 'secret' };
+  const put = (path, body) => fetch(base + path, { method: 'PUT', headers: { 'Content-Type': 'application/json', ...h }, body: JSON.stringify(body) });
+  assert.equal((await post('/api/admin/attractions', { name: 'X' })).status, 401);
+  let r = await post('/api/admin/attractions', { name: 'Bungee', price: 0 }, h);
+  assert.equal(r.status, 400);
+  r = await post('/api/admin/attractions', { name: "Bungee jumping", price: 300000, capacity: 5, rules: 'Bir\nIkki\n', limits: ['Vazn 50–100 kg'] }, h);
+  assert.equal(r.status, 201);
+  const a = await r.json();
+  assert.equal(a.id, 'bungee-jumping');
+  assert.deepEqual(a.rules, ['Bir', 'Ikki']);
+
+  let cfg = await (await fetch(base + '/api/config')).json();
+  assert.ok(cfg.attractions.some((x) => x.id === a.id));
+  const b = await (await book({ slot: '18:00', items: { 'bungee-jumping': 2 } })).json();
+  assert.equal(b.total, 600000);
+  assert.equal((await book({ slot: '18:00', items: { 'bungee-jumping': 4 } })).status, 400); // sig'im 5
+  await post(`/api/demo-pay/${b.code}`, {});
+
+  // narxni o'zgartirish va sotuvdan olish
+  r = await put(`/api/admin/attractions/${a.id}`, { price: 350000, active: false });
+  assert.equal(r.status, 200);
+  cfg = await (await fetch(base + '/api/config')).json();
+  assert.ok(!cfg.attractions.some((x) => x.id === a.id));
+  assert.equal((await book({ slot: '18:00', items: { 'bungee-jumping': 1 } })).status, 400);
+  // eski bron baribir ishlaydi va nomi ko'rinadi
+  const t = await (await fetch(`${base}/api/tickets/${b.code}`)).json();
+  assert.equal(t.names['bungee-jumping'], 'Bungee jumping');
+  r = await post('/api/admin/checkin', { code: b.code, attraction: 'bungee-jumping', count: 2 }, h);
+  assert.equal(r.status, 200);
+  r = await post('/api/admin/checkin', { code: b.code, attraction: 'bungee-jumping' }, h);
+  assert.match((await r.json()).error, /hamma/);
+  r = await post('/api/admin/checkin', { code: b.code, attraction: 'swing' }, h);
+  assert.match((await r.json()).error, /yo'q/);
+  const all = await (await fetch(base + '/api/admin/attractions', { headers: h })).json();
+  assert.equal(all.find((x) => x.id === a.id).price, 350000);
+  const list = await (await fetch(`${base}/api/admin/bookings?date=2026-06-07`, { headers: h })).json();
+  assert.equal(list.stats.flown['bungee-jumping'], 2);
+});
+
+test('admin rasm yuklaydi', async () => {
+  const h = { 'x-admin-token': 'secret' };
+  const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+  assert.equal((await post('/api/admin/upload', { dataUrl: png })).status, 401);
+  assert.equal((await post('/api/admin/upload', { dataUrl: 'data:text/html;base64,AAAA' }, h)).status, 400);
+  const r = await post('/api/admin/upload', { dataUrl: png }, h);
+  assert.equal(r.status, 201);
+  const { url } = await r.json();
+  const img = await fetch(base + url);
+  assert.equal(img.status, 200);
+  assert.match(img.headers.get('content-type'), /png/);
 });

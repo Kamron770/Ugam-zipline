@@ -55,11 +55,11 @@
     $('#cards').innerHTML = cfg.attractions
       .map(
         (a) => `<article class="card">
-          <div class="card-img"><img src="${esc(a.image)}" alt="${esc(a.name)}" loading="lazy"></div>
+          <div class="card-img">${a.image ? `<img src="${esc(a.image)}" alt="${esc(a.name)}" loading="lazy">` : ""}</div>
           <div class="card-body">
             <h3>${esc(a.name)}${a.subtitle ? `<small>${esc(a.subtitle)}</small>` : ''}</h3>
             <p>${esc(a.short)}</p>
-            <div class="card-meta"><span class="card-price">${fmt(a.price)}</span><span class="limit-chip">${esc(a.summary)}</span></div>
+            <div class="card-meta"><span class="card-price">${fmt(a.price)}</span>${a.summary ? `<span class="limit-chip">${esc(a.summary)}</span>` : ""}</div>
             <div class="card-actions">
               <button class="btn btn-line" type="button" data-rules="${a.id}">Qoidalar</button>
               <button class="btn btn-lime" type="button" data-book="${a.id}">Bron qilish</button>
@@ -101,13 +101,13 @@
     const a = state.cfg.attractions.find((x) => x.id === id);
     document.querySelectorAll('[data-tab]').forEach((t) => t.setAttribute('aria-selected', t.dataset.tab === id));
     $('#poster').innerHTML = `<div class="poster" role="tabpanel">
-      <button class="poster-img" type="button" data-poster="${a.id}" aria-label="Afishani kattalashtirish">
-        <picture><source media="(min-width: 821px)" srcset="${esc(a.poster)}"><img src="${esc(a.image)}" alt="${esc(a.name)} afishasi" loading="lazy"></picture>
-        <span class="zoom">🔍 Afishani ko'rish</span></button>
+      ${a.poster || a.image ? `<button class="poster-img" type="button" data-poster="${a.id}" aria-label="Afishani kattalashtirish">
+        <picture>${a.poster ? `<source media="(min-width: 821px)" srcset="${esc(a.poster)}">` : ''}<img src="${esc(a.image || a.poster)}" alt="${esc(a.name)} afishasi" loading="lazy"></picture>
+        <span class="zoom">🔍 Afishani ko'rish</span></button>` : '<div class="poster-img"></div>'}
       <div class="poster-body">
         <h3>${esc(a.name)}${a.subtitle ? ' ' + esc(a.subtitle) : ''}</h3>
-        <div class="poster-col"><span class="brush">Qoidalar</span><ul class="checks">${a.rules.map((r) => `<li>${esc(r)}</li>`).join('')}</ul></div>
-        <div class="poster-col"><span class="brush red">⚠ ${esc(a.limitsTitle || 'Cheklovlar')}</span><ul class="checks ban">${a.limits.map((r) => `<li>${esc(r)}</li>`).join('')}</ul></div>
+        <div class="poster-col"><span class="brush">Qoidalar</span><ul class="checks">${(a.rules || []).map((r) => `<li>${esc(r)}</li>`).join('')}</ul></div>
+        <div class="poster-col"><span class="brush red">⚠ ${esc(a.limitsTitle || 'Cheklovlar')}</span><ul class="checks ban">${(a.limits || []).map((r) => `<li>${esc(r)}</li>`).join('')}</ul></div>
         <div class="motto">${SHIELD}<span>Sizning xavfsizligingiz — bizning ustuvor maqsadimiz!</span></div>
       </div></div>`;
   }
@@ -123,7 +123,7 @@
     const poster = e.target.closest('[data-poster]');
     if (poster) {
       const a = state.cfg.attractions.find((x) => x.id === poster.dataset.poster);
-      return openPoster(a.poster, a.name);
+      return openPoster(a.poster || a.image, a.name);
     }
     const book = e.target.closest('[data-book]');
     if (book) {

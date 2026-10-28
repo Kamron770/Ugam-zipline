@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Admin — Ugam Gravity Park</title>
   <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#173d17">
   <link rel="icon" href="/assets/favicon.png" type="image/png">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
@@ -13,7 +14,7 @@
   <div class="admin">
     <div class="wrap">
       <div class="admin-top">
-        <a class="logo" href="/"><img src="/assets/logo-mark.png" alt="" width="52" height="31"><h1>Bronlar paneli</h1></a>
+        <a class="logo" href="/"><img src="/assets/logo-mark.png" alt="" width="52" height="31"><h1>Admin panel</h1></a>
         <button class="btn btn-line hidden" id="logout">Chiqish</button>
       </div>
 
@@ -26,29 +27,106 @@
       </form>
 
       <div id="app" class="hidden">
-        <form class="panel" id="find">
-          <div class="row">
-            <div class="field"><label for="code">Chipta kodi (yoki QR-ni telefon kamerasi bilan skanerlang)</label><input id="code" placeholder="UG-XXXXXXXX" autocapitalize="characters"></div>
-            <button class="btn btn-lime">Ochish</button>
-          </div>
-        </form>
-
-        <div class="panel">
-          <div class="row" style="margin-bottom:16px">
-            <div class="field"><label for="date">Sana</label><input type="date" id="date"></div>
-            <button class="btn btn-line" type="button" id="reload">Yangilash</button>
-          </div>
-          <div class="stats" id="stats"></div>
-          <div class="table-scroll">
-            <table class="blist">
-              <thead><tr><th>Vaqt</th><th>Kod</th><th>Mijoz</th><th>Chiptalar</th><th>Summa</th><th>Holat</th><th>O'tdi</th></tr></thead>
-              <tbody id="rows"></tbody>
-            </table>
-          </div>
+        <div class="tabs admin-tabs" role="tablist">
+          <button class="tab" type="button" data-view="scan" aria-selected="true">📷 Skaner</button>
+          <button class="tab" type="button" data-view="list" aria-selected="false">📋 Bronlar</button>
+          <button class="tab" type="button" data-view="attr" aria-selected="false">🎢 Attraksionlar</button>
         </div>
+
+        <!-- SKANER -->
+        <section id="view-scan">
+          <div class="panel">
+            <div class="field">
+              <label for="station">Men hozir shu attraksionda turibman:</label>
+              <select id="station"></select>
+            </div>
+          </div>
+
+          <div class="panel scan-panel">
+            <div class="scanner" id="scanner">
+              <video id="video" playsinline muted></video>
+              <div class="scan-frame"></div>
+              <button class="btn btn-lime" type="button" id="camBtn">📷 Kamerani yoqish</button>
+            </div>
+            <canvas id="canvas" hidden></canvas>
+            <form class="row" id="manual" style="margin-top:12px">
+              <div class="field"><label for="code">yoki chipta kodini yozing</label><input id="code" placeholder="UG-XXXXXXXX" autocapitalize="characters" autocomplete="off"></div>
+              <button class="btn btn-dark">Tekshirish</button>
+            </form>
+          </div>
+
+          <div id="result"></div>
+        </section>
+
+        <!-- BRONLAR -->
+        <section id="view-list" class="hidden">
+          <div class="panel">
+            <div class="row" style="margin-bottom:16px">
+              <div class="field"><label for="date">Sana</label><input type="date" id="date"></div>
+              <button class="btn btn-line" type="button" id="reload">Yangilash</button>
+            </div>
+            <div class="stats" id="stats"></div>
+            <div class="table-scroll">
+              <table class="blist">
+                <thead><tr><th>Vaqt</th><th>Kod</th><th>Mijoz</th><th>Chiptalar</th><th>Summa</th><th>Holat</th><th>Uchdi</th></tr></thead>
+                <tbody id="rows"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ATTRAKSIONLAR -->
+        <section id="view-attr" class="hidden">
+          <div class="panel">
+            <div class="row" style="justify-content:space-between;align-items:center">
+              <p class="hint" style="margin:0;flex:1 1 240px">Yangi attraksion qo'shing yoki narx, sig'im, qoidalarni o'zgartiring. O'zgarish saytda darhol ko'rinadi.</p>
+              <button class="btn btn-lime" type="button" id="addAttr">+ Yangi attraksion</button>
+            </div>
+          </div>
+          <div id="attrList" class="attr-list"></div>
+
+          <form class="panel hidden" id="attrForm">
+            <h2 id="attrFormTitle" style="font-size:1.6rem">Attraksion</h2>
+            <div class="fields">
+              <div class="field"><label for="f-name">Nomi *</label><input id="f-name" name="name" required maxlength="60"></div>
+              <div class="field"><label for="f-subtitle">Qo'shimcha nom</label><input id="f-subtitle" name="subtitle" maxlength="80" placeholder="masalan: + tomosha maydonchasi"></div>
+              <div class="field"><label for="f-price">Narx (so'm) *</label><input id="f-price" name="price" type="number" min="1000" step="1000" required></div>
+              <div class="field"><label for="f-capacity">1 soatda necha kishi o'tadi *</label><input id="f-capacity" name="capacity" type="number" min="1" required></div>
+              <div class="field"><label for="f-summary">Qisqa cheklov (kartochkada)</label><input id="f-summary" name="summary" maxlength="80" placeholder="masalan: 40–120 kg, 14 yoshdan"></div>
+              <div class="field"><label for="f-sort">Tartib raqami</label><input id="f-sort" name="sort" type="number" placeholder="10, 20, 30…"></div>
+            </div>
+            <div class="field" style="margin-top:12px"><label for="f-short">Tavsif</label><input id="f-short" name="short" maxlength="300"></div>
+            <div class="fields" style="margin-top:12px">
+              <div class="field"><label for="f-rules">Qoidalar (har biri yangi qatorda)</label><textarea id="f-rules" name="rules" rows="6"></textarea></div>
+              <div class="field"><label for="f-limits">Cheklovlar (har biri yangi qatorda)</label><textarea id="f-limits" name="limits" rows="6"></textarea></div>
+              <div class="field"><label for="f-limitsTitle">Cheklovlar sarlavhasi</label><input id="f-limitsTitle" name="limitsTitle" maxlength="30" placeholder="Cheklovlar"></div>
+              <label class="agree" style="align-self:end"><input type="checkbox" id="f-active" name="active" checked> Saytda ko'rsatilsin (sotuvda)</label>
+            </div>
+            <div class="fields" style="margin-top:12px">
+              <div class="field">
+                <label>Kartochka rasmi</label>
+                <img class="img-prev" id="prev-image" alt="">
+                <input type="file" accept="image/*" data-upload="image">
+                <input type="hidden" name="image" id="f-image">
+              </div>
+              <div class="field">
+                <label>Afisha (qoidalar rasmi)</label>
+                <img class="img-prev" id="prev-poster" alt="">
+                <input type="file" accept="image/*" data-upload="poster">
+                <input type="hidden" name="poster" id="f-poster">
+              </div>
+            </div>
+            <div class="row" style="margin-top:18px">
+              <button class="btn btn-lime" type="submit">Saqlash</button>
+              <button class="btn btn-line" type="button" id="cancelAttr">Bekor qilish</button>
+            </div>
+            <p class="errors" id="attrErr"></p>
+          </form>
+        </section>
       </div>
     </div>
   </div>
+  <script src="/vendor/jsQR.js"></script>
   <script src="/admin.js"></script>
 </body>
 </html>
